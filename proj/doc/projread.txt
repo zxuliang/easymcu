@@ -1,0 +1,23 @@
+# proj_configuration
+
+## MCU-CHIP IS: STM32F103RCT6 in STM32F10X_HD
+## Library    :	USE_STDPERIPH_DRIVER		
+## Debug      : USE_FULL_ASSERT
+
+## APP_SYSCLK_FREQ: SYSCLK_FREQ_72MHz
+
+	#define SYSCLK_FREQ_72MHz  72000000
+
+## isr_vector_in_flash offset=0x0
+/* #define VECT_TAB_SRAM */
+#define VECT_TAB_OFFSET  0x0 
+
+# Howto download program
+
+## MCUISP
+
+DTR lower->reset_chip; RTS High ->bootloader
+
+mcu_isr: burn hex file only
+mcu_isr: cann't burn bin file,it is stupid and can not set the flash
+address where the bin should stay.

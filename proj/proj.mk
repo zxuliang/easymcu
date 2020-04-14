@@ -4,7 +4,7 @@
 
 SRCS_C +=proj/fwlib/cmsis/core_cm3.c
 SRCS_C +=$(wildcard proj/fwlib/stmstd/src/*.c)
-SRCS_S :=proj/fwlib/stm32_startup.S
+SRCS_S +=proj/fwlib/startup.S
 
 INCLUDES += -Iproj/fwlib/cmsis
 INCLUDES += -Iproj/fwlib/stmstd/inc
@@ -38,9 +38,7 @@ AFLAGS += $(USE_NANOLIB) $(ARCHFLAGS)
 #### @$(LD) $(OBJS) $(LDFLAGS) -o $@ -Map $(basename $@).map
 #### -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group 
 ####
-
-LINKER_SCRIPT = proj/fwlib/stm32_flash.ld
-
+LINKER_SCRIPT = proj/fwlib/proj.ld
 LDFLAGS += $(USE_NANO LIB) $(NOSEMIHOST)
 LDFLAGS += -nostartfiles -nostdlib
 LDFLAGS +=  -Wl,--gc-sections -Wl,--build-id=none -Bstatic
@@ -55,7 +53,7 @@ OBJCOPY = $(CROSS_COMPILE)objcopy
 SIZE = $(CROSS_COMPILE)size
 
 OUTPUT=out
-TARGET:=${OUTPUT}/stm32.elf ${OUTPUT}/stm32.bin ${OUTPUT}/stm32.hex
+TARGET:=${OUTPUT}/easymcu.elf
 
 .PHONY: all clean
 
@@ -67,13 +65,9 @@ ${OUTPUT}/%.elf: $(OBJS)
 	@echo ""
 	@echo "CC -Wl,--start-group ${OBJS} -Wl,--end-group $(LDFLAGS) -o $@"
 	@$(CC) -Wl,--start-group $(OBJS) -Wl,--end-group $(LDFLAGS) -o $@
+	@$(OBJCOPY) --gap-fill=0xff -O binary  -R .note -R .comment -S $@ $(subst .elf,.bin,$@)
+	@$(OBJCOPY) --gap-fill=0xff -O ihex -R .note -R .comment -S $@ $(subst .elf,.hex,$@)
 	@$(NM) -n $@ | grep -v '\( [aUw] \)|\(__crc__\)' > $(subst .elf,.map,$@)
-
-${OUTPUT}/%.hex: ${OUTPUT}/%.elf
-	@$(OBJCOPY) --gap-fill=0xff -O ihex -R .note -R .comment -S $< $@
-
-${OUTPUT}/%.bin: ${OUTPUT}/%.elf
-	@$(OBJCOPY) --gap-fill=0xff -O binary  -R .note -R .comment -S $< $@
 
 ${OUTPUT}/%.o: proj/%.c
 	@mkdir -p $(dir $@)
@@ -85,8 +79,15 @@ ${OUTPUT}/%.o: proj/%.S
 	@echo "CC  $<"
 	@$(CC) $(AFLAGS) $(INCLUDES) -c $< -o $@
 
-#Auto depends for c; maybe need for .S too
+#Auto depends for c; 
 ${OUTPUT}/%.d:proj/%.c
+	@mkdir -p ${dir $@}
+	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDES) $(CFLAGS) > $@.$$$$;\
+	sed 's,\(.*\)\.o[ :]*,$(addprefix $(dir $@),\1.o):,g' < $@.$$$$ > $@;\
+	rm -f $@.$$$$
+
+# Auto depends for .S too
+${OUTPUT}/%.d:proj/%.S
 	@mkdir -p ${dir $@}
 	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDES) $(CFLAGS) > $@.$$$$;\
 	sed 's,\(.*\)\.o[ :]*,$(addprefix $(dir $@),\1.o):,g' < $@.$$$$ > $@;\

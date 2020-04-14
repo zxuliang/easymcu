@@ -15,7 +15,6 @@ static int get_value(void);
 void hw_console_output(const char *str);
 
 /***********************APP***********************/
-extern uint32_t __hellox__;
 
 int main(void)
 {
@@ -30,8 +29,7 @@ int main(void)
 		GPIO_SetBits(GPIOD, GPIO_Pin_2);
 		GPIO_ResetBits(GPIOA, GPIO_Pin_8);
 		bsp_busy_wait(60);
-		kprint("This is just testB %#x\n\n", get_value());
-		kprint("This is just testA %#x\n\n", __hellox__);
+		kprint("This is just testB %#x \n", get_value());
 	}
 
 	return 0;

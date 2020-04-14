@@ -4,7 +4,7 @@
 
 SRCS_C +=proj/fwlib/cmsis/core_cm3.c
 SRCS_C +=$(wildcard proj/fwlib/stmstd/src/*.c)
-SRCS_S +=proj/fwlib/stm32_startup.S
+SRCS_S :=proj/fwlib/stm32_startup.S
 
 INCLUDES += -Iproj/fwlib/cmsis
 INCLUDES += -Iproj/fwlib/stmstd/inc
@@ -87,12 +87,6 @@ ${OUTPUT}/%.o: proj/%.S
 
 #Auto depends for c; maybe need for .S too
 ${OUTPUT}/%.d:proj/%.c
-	@mkdir -p ${dir $@}
-	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDES) $(CFLAGS) > $@.$$$$;\
-	sed 's,\(.*\)\.o[ :]*,$(addprefix $(dir $@),\1.o):,g' < $@.$$$$ > $@;\
-	rm -f $@.$$$$
-
-${OUTPUT}/%.d:proj/%.S
 	@mkdir -p ${dir $@}
 	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDES) $(CFLAGS) > $@.$$$$;\
 	sed 's,\(.*\)\.o[ :]*,$(addprefix $(dir $@),\1.o):,g' < $@.$$$$ > $@;\

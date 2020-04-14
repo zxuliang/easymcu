@@ -66,7 +66,6 @@ SECTIONS
  		*(.dtors)
 
 		*(.rodata*)
-		KEEP(*(.hello))
 
 		KEEP(*(.eh_frame*))
 	} > ROM

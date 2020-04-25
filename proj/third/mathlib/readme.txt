@@ -1,0 +1,1 @@
+#LDFLAGS	+=-Lproj/third/mathlib -laeabi-cortexm3

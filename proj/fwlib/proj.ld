@@ -66,6 +66,11 @@ SECTIONS
  		*(.dtors)
 
 		*(.rodata*)
+		
+		. = ALIGN(4);
+		__u_boot_cmd_start = .;
+		KEEP(*(SORT(.u_boot_cmd)))
+		__u_boot_cmd_end = .;
 
 		KEEP(*(.eh_frame*))
 	} > ROM

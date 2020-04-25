@@ -1,41 +1,50 @@
 #include <stdint.h>
 #include <stm32f10x.h>
-#include <libutils/libutils.h>
+#include <ushell/ushell.h>
+#include <libutils/utils.h>
 
 
 static void bsp_busy_wait(uint32_t ticks);
 static void bsp_clock_init(void);
 static void bsp_led_init(void);
-static void bsp_putc(char c);
-static void bsp_puts(const char *str);
 static void bsp_init(void);
 static int get_value(void);
 
 /* override weak Function */
-void hw_console_output(const char *str);
+void console_init(void);
+void console_puts(const char *str);
+void console_putchar(char c);
+unsigned char console_getchar(void);
+
+
+int led_blink(void)
+{
+	GPIO_ResetBits(GPIOD, GPIO_Pin_2);
+	GPIO_SetBits(GPIOA, GPIO_Pin_8);
+	bsp_busy_wait(60);
+	GPIO_SetBits(GPIOD, GPIO_Pin_2);
+	GPIO_ResetBits(GPIOA, GPIO_Pin_8);
+	bsp_busy_wait(60);
+
+	return 0;
+}
 
 /***********************APP***********************/
 
 int main(void)
 {
-
+	int len = 0;
 	bsp_init();
 
-	while (1)
-	{
-		GPIO_ResetBits(GPIOD, GPIO_Pin_2);
-		GPIO_SetBits(GPIOA, GPIO_Pin_8);
-		bsp_busy_wait(60);
-		GPIO_SetBits(GPIOD, GPIO_Pin_2);
-		GPIO_ResetBits(GPIOA, GPIO_Pin_8);
-		bsp_busy_wait(60);
-		kprint("This is just testB %#x \n", get_value());
+	for (;;) {
+		len = readline ("easymcu $");
+		if(len > 0){
+			run_command (console_buffer, 0);
+		}
 	}
 
 	return 0;
 }
-
-
 
 void bsp_busy_wait(uint32_t ticks)
 {
@@ -44,7 +53,7 @@ void bsp_busy_wait(uint32_t ticks)
 	}
 }
 
-void bsp_putc(char c)
+void console_putchar(char c)
 {
 	if ('\n' == c) {
 		USART_SendData(USART1, (uint16_t)'\r');
@@ -56,20 +65,24 @@ void bsp_putc(char c)
 	}
 }
 
-void bsp_puts(const char *str)
+unsigned char console_getchar(void)
 {
-	while (*str) {
-		bsp_putc(*str);
-		str++;
-	}
+	unsigned char data = 0;
+	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
+	data = (uint8_t)USART_ReceiveData(USART1);
+	return data;
 }
 
-void hw_console_output(const char *str)
+
+void console_puts(const char *str)
 {
-	uint32_t flags;
-	flags = local_irq_save();
-	bsp_puts(str);
-	local_irq_restore(flags);
+//	uint32_t flags;
+//	flags = local_irq_save();
+	while (*str) {
+		console_putchar(*str);
+		str++;
+	}
+//	local_irq_restore(flags);
 }
 
 void bsp_clock_init(void)
@@ -86,7 +99,18 @@ void bsp_clock_init(void)
 	SysTick_Config(RCC_ClocksStructure.HCLK_Frequency/100);
 }
 
-void bsp_hw_console_init(void)
+void NVIC_Configuration(void)
+{
+	NVIC_InitTypeDef NVIC_InitStructure;
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 14;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+}
+
+void console_init(void)
 {
 	GPIO_InitTypeDef gpio_console;
 	USART_InitTypeDef USART_InitStructure;
@@ -109,6 +133,14 @@ void bsp_hw_console_init(void)
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART1, &USART_InitStructure);
+
+#if 0
+/* using inerrupt to transmit data */
+	USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+/* uisng intertupt to receive data */
+	USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
+#endif
+
 	USART_Cmd(USART1, ENABLE);
 }
 
@@ -131,7 +163,16 @@ void bsp_init(void)
 {
 	bsp_clock_init();
 	bsp_led_init();
-	bsp_hw_console_init();
+	console_init();
+	NVIC_Configuration();
+}
+
+void USART1_IRQHandler(void)
+{
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET) {
+		USART_ReceiveData(USART1);
+		USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
+	}
 }
 
 int get_value(void)
@@ -140,3 +181,26 @@ int get_value(void)
 	__asm__ volatile ("mov %0, #8":"=r"(value)::"memory");
 	return value;
 }
+
+
+int do_ledblink (cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	uint32_t cnt = 1;
+	if (argc > 1) {
+		cnt = simple_strtoul (argv[1], NULL, 10);
+	}
+
+	while (cnt--) {
+		led_blink();
+	}
+
+	printk("ledblink done \n");
+
+	return 0;
+}
+
+
+U_BOOT_CMD(
+	ledblink,	CFG_MAXARGS,	1,	do_ledblink,
+	"help    - blink led \n",
+);

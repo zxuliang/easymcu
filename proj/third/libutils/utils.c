@@ -1,4 +1,4 @@
-#include <libutils/libutils.h>
+#include <libutils/utils.h>
 
 int divide(long *n, int base)
 {
@@ -117,6 +117,16 @@ char *strstr(const char *s1, const char *s2)
 
     return NULL;
 }
+
+
+char * strchr(const char * s, int c)
+{
+	for(; *s != (char) c; ++s)
+		if (*s == '\0')
+			return NULL;
+	return (char *) s;
+}
+
 
 
 /**
@@ -253,6 +263,17 @@ size_t strlen(const char *s)
 
     return sc - s;
 }
+
+char * strcpy(char * dest,const char *src)
+{
+	char *tmp = dest;
+
+	while ((*dest++ = *src++) != '\0')
+		/* nothing */;
+	return tmp;
+}
+
+
 
 int skip_atoi(const char **s)
 {
@@ -686,25 +707,83 @@ int sprintf(char *buf, const char *format, ...)
     return n;
 }
 
-__attribute__((weak)) void hw_console_output(const char *str)
+__attribute__((weak)) void console_puts(const char *str)
 {
 }
 
-__attribute__((weak)) void bsp_hw_console_init(void)
+__attribute__((weak)) void console_init(void)
 {
 }
 
+__attribute__((weak)) void console_putchar(unsigned char c)
+{
 
+}
+
+__attribute__((weak)) unsigned char console_getchar(void)
+{
+	/* wait for character to arrive */
+//	while (!(uart->UTRSTAT & 0x1));
+//	return uart->URXH & 0xff;
+	return 0;
+}
+
+__attribute__((weak)) int console_has_data(void)
+{
+//	if (uart->UTRSTAT & 0x1) {
+//		return 1;
+//	}
+	return 0;
+
+}
 
 void kputs(const char *str)
 {
-    if (!str) return;
-    hw_console_output(str);
+	if (!str) return;
+	console_puts(str);
+}
+
+int puts(const char *s)
+{
+	int i = 0;
+	while (*s) {
+		console_putchar(*s);
+		s++;
+		i++;
+	}
+	return i+2;
+}
+
+int putchar(int c)
+{
+	console_putchar((unsigned char)c);
+	return c;
+}
+
+int putc(unsigned char c)
+{
+	return putchar(c);
+}
+
+int tstc (void)
+{
+	return console_has_data();
 }
 
 
+int getc(void)
+{
+	return console_getchar();
+}
+
+
+
+
+
+
+
 #define RT_CONSOLEBUF_SIZE (128)
-void kprint(const char *fmt, ...)
+void printk(const char *fmt, ...)
 {
     va_list args;
     size_t length;
@@ -720,7 +799,7 @@ void kprint(const char *fmt, ...)
     if (length > RT_CONSOLEBUF_SIZE - 1)
         length = RT_CONSOLEBUF_SIZE - 1;
 
-    hw_console_output(rt_log_buf);
+    console_puts(rt_log_buf);
 
     va_end(args);
 }
@@ -771,6 +850,66 @@ int ffs(int value)
         return lowest_bit_bitmap[(value & 0xff0000) >> 16] + 17;
 
     return lowest_bit_bitmap[(value & 0xff000000) >> 24] + 25;
+}
+
+unsigned char _ctype[] = {
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 0-7 */
+_C,_C|_S,_C|_S,_C|_S,_C|_S,_C|_S,_C,_C,		/* 8-15 */
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 16-23 */
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 24-31 */
+_S|_SP,_P,_P,_P,_P,_P,_P,_P,			/* 32-39 */
+_P,_P,_P,_P,_P,_P,_P,_P,			/* 40-47 */
+_D,_D,_D,_D,_D,_D,_D,_D,			/* 48-55 */
+_D,_D,_P,_P,_P,_P,_P,_P,			/* 56-63 */
+_P,_U|_X,_U|_X,_U|_X,_U|_X,_U|_X,_U|_X,_U,	/* 64-71 */
+_U,_U,_U,_U,_U,_U,_U,_U,			/* 72-79 */
+_U,_U,_U,_U,_U,_U,_U,_U,			/* 80-87 */
+_U,_U,_U,_P,_P,_P,_P,_P,			/* 88-95 */
+_P,_L|_X,_L|_X,_L|_X,_L|_X,_L|_X,_L|_X,_L,	/* 96-103 */
+_L,_L,_L,_L,_L,_L,_L,_L,			/* 104-111 */
+_L,_L,_L,_L,_L,_L,_L,_L,			/* 112-119 */
+_L,_L,_L,_P,_P,_P,_P,_C,			/* 120-127 */
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,		/* 128-143 */
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,		/* 144-159 */
+_S|_SP,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,   /* 160-175 */
+_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,       /* 176-191 */
+_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,       /* 192-207 */
+_U,_U,_U,_U,_U,_U,_U,_P,_U,_U,_U,_U,_U,_U,_U,_L,       /* 208-223 */
+_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,       /* 224-239 */
+_L,_L,_L,_L,_L,_L,_L,_P,_L,_L,_L,_L,_L,_L,_L,_L};      /* 240-255 */
+
+unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base)
+{
+	unsigned long result = 0,value;
+
+	if (*cp == '0') {
+		cp++;
+		if ((*cp == 'x') && isxdigit(cp[1])) {
+			base = 16;
+			cp++;
+		}
+		if (!base) {
+			base = 8;
+		}
+	}
+	if (!base) {
+		base = 10;
+	}
+	while (isxdigit(*cp) && (value = isdigit(*cp) ? *cp-'0' : (islower(*cp)
+	    ? toupper(*cp) : *cp)-'A'+10) < base) {
+		result = result*base + value;
+		cp++;
+	}
+	if (endp)
+		*endp = (char *)cp;
+	return result;
+}
+
+long simple_strtol(const char *cp,char **endp,unsigned int base)
+{
+	if(*cp=='-')
+		return -simple_strtoul(cp+1,endp,base);
+	return simple_strtoul(cp,endp,base);
 }
 
 

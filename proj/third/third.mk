@@ -1,3 +1,4 @@
 INCLUDES	+= -Iproj/third
-SRCS_C		+= proj/third/libutils/libutils.c
-#LDFLAGS	+=-Lproj/third/mathlib -laeabi-cortexm3
+SRCS_C		+= proj/third/libutils/utils.c
+SRCS_C		+= proj/third/ushell/ushell.c
+

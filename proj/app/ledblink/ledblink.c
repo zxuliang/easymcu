@@ -59,7 +59,6 @@ static void bspi_spi_init(void)
 	SPI_NSSInternalSoftwareConfig(SPI1, SPI_NSSInternalSoft_Set);
 	SPI_Cmd(SPI1, ENABLE);
 
-
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (uint32_t)(&SPI1->DR);
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;
@@ -82,6 +81,7 @@ static void bspi_spi_init(void)
 	DMA_Cmd(DMA1_Channel2, ENABLE);
 	DMA_Cmd(DMA1_Channel3, ENABLE);
 
+	/* dummy read to clear fifo */
 	SPI_I2S_ReceiveData(SPI1);
 }
 
@@ -151,32 +151,36 @@ int do_spi(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
  tx_chksum = bsp_fill_data(txbuf, PACKET_SIZE);
  printk("fill with cheksum: 0x%x \n", tx_chksum);
 
- /* Trigger SPI_DMA_TX/RX Req */
-
+ SPI_Cmd(SPI1, ENABLE);
 
  for (; cnt > 0; cnt--) {
+
+  //cs_output_enable
   SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, ENABLE);
   while(DMA_GetCurrDataCounter(DMA1_Channel2) !=0) {
-  		printk(" DMA_CH2_RSVD = %u bytes \n", DMA_GetCurrDataCounter(DMA1_Channel2));
   }
+  while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) != RESET);
+  while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_BSY) != RESET);
   SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx | SPI_I2S_DMAReq_Rx, DISABLE);
+  //cs_output_disable
 
   DMA_Cmd(DMA1_Channel2, DISABLE);
   DMA_SetCurrDataCounter(DMA1_Channel2, PACKET_SIZE);
-  DMA1_Channel2->CPAR = (uint32_t )&SPI1->DR;
-  DMA1_Channel2->CMAR = (uint32_t)rxbuf;
+//  DMA1_Channel2->CPAR = (uint32_t )&SPI1->DR;
+//  DMA1_Channel2->CMAR = (uint32_t)rxbuf;
   DMA_Cmd(DMA1_Channel2, ENABLE);
 
   DMA_Cmd(DMA1_Channel3, DISABLE );
   DMA_SetCurrDataCounter(DMA1_Channel3,PACKET_SIZE);
-  DMA1_Channel2->CPAR = (uint32_t )&SPI1->DR;
-  DMA1_Channel2->CMAR = (uint32_t)txbuf;
+//  DMA1_Channel2->CPAR = (uint32_t )&SPI1->DR;
+//  DMA1_Channel2->CMAR = (uint32_t)txbuf;
   DMA_Cmd(DMA1_Channel3, ENABLE);
 
-  printk("spi test done %u \n", cnt);
+  printk("spi loop %u \n", cnt);
  }
 
- printk("spi test done \n");
+ SPI_Cmd(SPI1, DISABLE);
+ printk("spi done \n");
 
  return 0;
 }

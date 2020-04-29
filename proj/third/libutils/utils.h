@@ -7,19 +7,18 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#define va_list					__builtin_va_list
-#define va_end						__builtin_va_end
-#define va_arg						__builtin_va_arg
-#define va_start(v,l)			__builtin_va_start((v),l)
+#define va_list			__builtin_va_list
+#define va_end			__builtin_va_end
+#define va_arg			__builtin_va_arg
+#define va_start(v,l)		__builtin_va_start((v),l)
 
-#define SECTION(x)			__attribute__((section(x)))
-#define UNUSED 				__attribute__((unused))
-#define USED					__attribute__((used))
-#define ALIGN(n)				__attribute__((aligned(n)))
-#define WEAK					__attribute__((weak))
+#define SECTION(x)		__attribute__((section(x)))
+#define UNUSED 			__attribute__((unused))
+#define USED			__attribute__((used))
+#define ALIGN(n)		__attribute__((aligned(n)))
+#define WEAK			__attribute__((weak))
 
 int divide(long *n, int base);
-
 void *memcpy(void *dest, const void *src, size_t n);
 void *memset(void *s, int c, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
@@ -44,7 +43,9 @@ int putc(unsigned char c);
 int getc(void);
 int puts(const char *s);
 
-//#define isdigit(c)  ((unsigned)((c) - '0') < 10)
+extern unsigned long jiffies;
+void delayms(uint32_t ticks);
+
 
 /*
  * NOTE! This ctype does not handle EOF like the standard C

@@ -136,7 +136,7 @@ void PendSV_Handler(void)
   * @param  None
   * @retval None
   */
-unsigned int jiffies = 0;
+unsigned long jiffies = 0;
 
 void SysTick_Handler(void)
 {

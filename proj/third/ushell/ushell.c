@@ -36,57 +36,57 @@ int readline (const char *const prompt)
 		switch (c) {
 			case '\r': /* Enter */
 			case '\n':
-						*p = '\0';
-						puts ("\r\n");
-						return (p - console_buffer);
+				*p = '\0';
+				puts ("\r\n");
+				return (p - console_buffer);
 
 			case '\0': /* nul */
-						continue;
+				continue;
 
 			case 0x03: /* ^C - break */
-						console_buffer[0] = '\0'; /* discard input */
-						return (-1);
+				console_buffer[0] = '\0'; /* discard input */
+				return (-1);
 
 			case 0x15: /* ^U - erase line */
-						while (col > plen) {
-							puts (erase_seq);
-							--col;
-						}
-						p = console_buffer;
-						n = 0;
-						continue;
+				while (col > plen) {
+					puts (erase_seq);
+					--col;
+				}
+				p = console_buffer;
+				n = 0;
+				continue;
 
 			case 0x17: /* ^W - erase word */
-						p=delete_char(console_buffer, p, &col, &n, plen);
-						while ((n > 0) && (*p != ' ')) {
-							p=delete_char(console_buffer, p, &col, &n, plen);
-						}
-						continue;
+				p=delete_char(console_buffer, p, &col, &n, plen);
+				while ((n > 0) && (*p != ' ')) {
+					p=delete_char(console_buffer, p, &col, &n, plen);
+				}
+				continue;
 
 			case 0x08: /* ^H - backspace */
 			case 0x7F: /* DEL - backspace */
-						p=delete_char(console_buffer, p, &col, &n, plen);
-						continue;
+				p=delete_char(console_buffer, p, &col, &n, plen);
+				continue;
 
 			default:
-						/*
-						* Must be a normal character then
-						*/
-						if (n < CFG_CBSIZE-2) {
-							if (c == '\t') { /* expand TABs */
-								puts (tab_seq+(col&07));
-								col += 8 - (col&07);
-							}
-							else {
-										++col; /* echo input */
-										putc (c);
-							}
-							*p++ = c;
-							++n;
-						}
-						else { /* Buffer full */
-							putc ('\a');
-						}
+				/*
+				* Must be a normal character then
+				*/
+				if (n < CFG_CBSIZE-2) {
+					if (c == '\t') { /* expand TABs */
+						puts (tab_seq+(col&07));
+						col += 8 - (col&07);
+					}
+					else {
+								++col; /* echo input */
+								putc (c);
+					}
+					*p++ = c;
+					++n;
+				}
+				else { /* Buffer full */
+					putc ('\a');
+				}
 		}
 	}
 }

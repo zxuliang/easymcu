@@ -912,6 +912,12 @@ long simple_strtol(const char *cp,char **endp,unsigned int base)
 	return simple_strtoul(cp,endp,base);
 }
 
+void delayms(uint32_t ticks)
+{
+	uint32_t current_time = jiffies;
+	while ((uint32_t)(jiffies - current_time) < ticks) {
+	}
+}
 
 
 #ifdef  USE_FULL_ASSERT

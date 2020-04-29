@@ -8320,7 +8320,7 @@ typedef struct
   */
 
 
-extern unsigned int jiffies;
+extern unsigned long jiffies;
 
 #ifdef __cplusplus
 }

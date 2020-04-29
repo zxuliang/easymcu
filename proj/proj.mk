@@ -21,7 +21,7 @@ ARCHFLAGS := -march=armv7-m -mcpu=cortex-m3 -mthumb
 # define soc and using fwlibs
 CFLAGS += -DSTM32F10X_HD
 CFLAGS += -DUSE_STDPERIPH_DRIVER
-CFLAGS += -DUSE_FULL_ASSERT
+CFLAGS += $(APPCFLAGS)
 
 CFLAGS += $(ARCHFLAGS)
 CFLAGS += -std=gnu99 -Wall -O0 -g
@@ -36,7 +36,7 @@ AFLAGS += $(USE_NANOLIB) $(ARCHFLAGS)
 #### pass linker options -Wl,--gc-sections using gcc
 #### pass linker options --gc-sections using ld
 #### @$(LD) $(OBJS) $(LDFLAGS) -o $@ -Map $(basename $@).map
-#### -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group 
+#### -Wl,--start-group -lgcc -lc -lnosys -Wl,--end-group
 ####
 LINKER_SCRIPT = proj/fwlib/proj.ld
 LDFLAGS += $(USE_NANO LIB) $(NOSEMIHOST)
@@ -79,7 +79,7 @@ ${OUTPUT}/%.o: proj/%.S
 	@echo "CC  $<"
 	@$(CC) $(AFLAGS) $(INCLUDES) -c $< -o $@
 
-#Auto depends for c; 
+#Auto depends for c;
 ${OUTPUT}/%.d:proj/%.c
 	@mkdir -p ${dir $@}
 	@set -e; rm -f $@; $(CC) -MM $< $(INCLUDES) $(CFLAGS) > $@.$$$$;\
